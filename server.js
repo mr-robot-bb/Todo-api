@@ -175,38 +175,49 @@ app.delete('/todos/:id', function(req, res) {
 
 // PUT /todos/:id
 app.put('/todos/:id', function(req, res) {
-			var todoId = parseInt(req.params.id, 10);
-			var body = _.pick(req.body, 'description', 'completed');
-			var attributes = {};
+	var todoId = parseInt(req.params.id, 10);
+	var body = _.pick(req.body, 'description', 'completed');
+	var attributes = {};
 
 
-			// check the completed bool
-			if (body.hasOwnProperty('completed')) {
-				attributes.completed = body.completed;
-			}
+	// check the completed bool
+	if (body.hasOwnProperty('completed')) {
+		attributes.completed = body.completed;
+	}
 
-			// check the description strin
-			if (body.hasOwnProperty('description')) {
-				attributes.description = body.description;
-			}
+	// check the description strin
+	if (body.hasOwnProperty('description')) {
+		attributes.description = body.description;
+	}
 
-			db.todo.findById(todoId).then(function(todo) {
-				if (todo) {
-					todo.update(attributes).then(function(todo) {
-						res.json(todo.toJSON());
-					}, function(e) {
-						res.status(400).json(e);
-					});
-				} else {
-					res.status(404).send();
-				}
-			}, function() {
-				res.status(500).send();
+	db.todo.findById(todoId).then(function(todo) {
+		if (todo) {
+			todo.update(attributes).then(function(todo) {
+				res.json(todo.toJSON());
+			}, function(e) {
+				res.status(400).json(e);
 			});
-		});
+		} else {
+			res.status(404).send();
+		}
+	}, function() {
+		res.status(500).send();
+	});
+});
 
-			db.sequelize.sync().then(function() {
-				app.listen(PORT, function() {
-					console.log('Express listening to port ' + PORT + '!');
-				});
-			});
+app.post('/users', function(req, res){
+	var body = _.pick(req.body, 'email', 'password');
+
+	db.user.create(body).then(function(instance) {
+		res.json(instance.toJSON());
+	}, function(e) {
+		// return errof
+		res.status(400).json(e);
+	});
+});
+
+db.sequelize.sync().then(function() {
+	app.listen(PORT, function() {
+		console.log('Express listening to port ' + PORT + '!');
+	});
+});
