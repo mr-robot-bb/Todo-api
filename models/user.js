@@ -2,7 +2,7 @@ var bcrypt = require('bcryptjs');
 var _= require('underscore');
 
 module.exports = function(sequelize, DataTypes) {
-	return sequelize.define('user', {
+	var user = sequelize.define('user', {
 		email: {
 			type: DataTypes.STRING,
 			allowNull: false,
@@ -14,7 +14,7 @@ module.exports = function(sequelize, DataTypes) {
 		salt: {
 			type: DataTypes.STRING
 		},
-		pashword_hash: {
+		password_hash: {
 			type: DataTypes.STRING
 		},
 		password: {
@@ -29,7 +29,7 @@ module.exports = function(sequelize, DataTypes) {
 
 				this.setDataValue('password', value);
 				this.setDataValue('salt', salt);
-				this.setDataValue('pashword_hash', hashedPassword);
+				this.setDataValue('password_hash', hashedPassword);
 			}
 		}
 	}, {
@@ -41,11 +41,38 @@ module.exports = function(sequelize, DataTypes) {
 				}
 			}
 		},
+		classMethods: {
+			authenticate: function(body){
+				return new Promise(function (resolve, reject){
+
+					if (_.isString(body.email) && _.isString(body.password)) {
+						user.findOne({
+							where: {
+								email: body.email
+							}
+						}).then(function(user) {
+							if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) {
+								return reject(); //user not found
+							}
+							resolve(user);
+
+						}, function(e) {
+							reject();
+						});
+
+					} else {
+						return reject();
+					}
+				});
+			}
+		}
+		,
 		instanceMethods: {
 			toPublicJSON: function(){
 				var json = this.toJSON();
 				return _.pick(json,'id','email','updatedAt', 'createdAt');
 			}
 		}
-	})
+	});
+	return user;
 };
