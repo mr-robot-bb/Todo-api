@@ -4,7 +4,7 @@ var _ = require('underscore');
 
 var db = require('./db.js');
 var bcrypt = require('bcryptjs');
-
+var middleware = require('./middleware.js')(db);
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -18,7 +18,7 @@ app.get('/', function(req, res) {
 });
 
 // GET /todos?completed=true&q=house
-app.get('/todos', function(req, res) {
+app.get('/todos', middleware.requireAuthentication, function(req, res) {
 	var query = req.query;
 	var where = {};
 
@@ -46,38 +46,11 @@ app.get('/todos', function(req, res) {
 	});
 
 
-	/*
-	var filteredTodos = todos;
-
-	if (queryParams.completed && queryParams.completed === 'true') {
-		console.log('a');
-		filteredTodos = _.where(filteredTodos, {
-			completed: true
-		});
-	} else if (queryParams.completed && queryParams.completed === 'false') {
-		console.log('b');
-		filteredTodos = _.where(filteredTodos, {
-			completed: false
-		});
-	}
-
-	if (queryParams.q && _.isString(queryParams.q) && queryParams.q.length > 0) {
-		console.log('q is given and of correct form');
-
-		filteredTodos = _.filter(filteredTodos, function(item) {
-			if (item.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1) {
-				return true;
-			} else {
-				return false;
-			}
-		});
-
-	}
-	res.json(filteredTodos); */
+	
 });
 
 // GET /todos/:id
-app.get('/todos/:id', function(req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 
 	db.todo.findById(todoId).then(function(todo) {
@@ -92,21 +65,11 @@ app.get('/todos/:id', function(req, res) {
 		res.status(500).send();
 	});
 
-	/*
-	var matchedTodo = _.findWhere(todos, {
-		id: todoId
-	});
-
-	if (matchedTodo) {
-		res.json(matchedTodo);
-	} else {
-		res.status(404).send();
-	}*/
-	//res.send('asking for todo with id of ' + req.params.id)
+	
 });
 
 // POST /todos
-app.post('/todos', function(req, res) {
+app.post('/todos', middleware.requireAuthentication, function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
 
 	db.todo.create(body).then(function(instance) {
@@ -115,24 +78,13 @@ app.post('/todos', function(req, res) {
 		// return errof
 		res.status(400).json(e);
 	});
-	/*
-
-		if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-			return res.status(400).send();
-		}
-		body.description = body.description.trim();
-
-		body.id = todoNextId;
-		todoNextId++;
-		todos.push(body);
-		res.json(body);
-		*/
+	
 });
 
 // DELETE /todos:/id
 
 
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 
 	db.todo.destroy({
@@ -152,30 +104,12 @@ app.delete('/todos/:id', function(req, res) {
 	});
 
 
-	// my code V
-	// db.todo.findById(todoId).then(function(todo) {
-	// 	if (todo) {
-	// 		console.log('trying to delete row...');
 
-	// 		db.todo.destroy({
-	// 			where: {
-	// 				id: todoId
-	// 			}
-	// 		});
-
-	// 		res.json(todo.toJSON());
-	// 	} else {
-	// 		console.log('todo with given id not found');
-	// 		res.status(404).send();
-	// 	}
-	// }, function(e) {
-	// 	res.status(500).send();
-	// });
 
 });
 
 // PUT /todos/:id
-app.put('/todos/:id', function(req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 	var body = _.pick(req.body, 'description', 'completed');
 	var attributes = {};
